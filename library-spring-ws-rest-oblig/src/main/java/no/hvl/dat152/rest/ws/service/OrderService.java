@@ -41,16 +41,13 @@ public class OrderService {
     }
 
 	@Transactional
-	public List<Order> findAllOrders(){
-		
-		List<Order> orders = (List<Order>) orderRepository.findAll();
-		
-		return orders;
+	public Page<Order> findAllOrders(Pageable pageable){
+		return orderRepository.findAll(pageable);
 	}
 	
 	
-	public List<Order> findByExpiryDate(LocalDate expiry, Pageable page){
-		return orderRepository.findByExpiryBefore(expiry,page).getContent();
+	public Page<Order> findByExpiryDate(LocalDate expiry, Pageable page){
+		return orderRepository.findByExpiryBefore(expiry,page);
 	}
 	
 	public Order findOrder(Long id) throws OrderNotFoundException {

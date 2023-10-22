@@ -8,13 +8,16 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,13 +46,30 @@ public class OrderController {
 
 	
 	@GetMapping("/orders")
-	public ResponseEntity<Object> getAllBorrowOrders(
+	public ResponseEntity<PagedModel<Order>> getAllBorrowOrders(
 			@RequestParam(required = false) LocalDate expiry, 
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "3") int size){
-		List<Order> orders = orderService.findByExpiryDate(expiry, PageRequest.of(page,size));
+			@RequestParam(defaultValue = "1") int size){
 
-		return new ResponseEntity<>(orders,HttpStatus.OK);
+		Page<Order> orders;
+		if(expiry == null){
+			orders = orderService.findAllOrders(PageRequest.of(page, size));
+		}else {
+			orders = orderService.findByExpiryDate(expiry,PageRequest.of(page,size));
+		}
+		if(orders.isEmpty()){
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		}
+		PagedModel.PageMetadata metadata = new PagedModel.PageMetadata(orders.getSize(), orders.getNumber(),orders.getTotalElements(), orders.getTotalPages());
+		PagedModel<Order> pagedModel  = PagedModel.of(orders.getContent(),metadata);
+		//sadly link look like this http://localhost:8090/elibrary/api/v1/orders?page=1&size=1{&expiry}, I don't know how to change it
+		if(orders.hasNext()){
+			pagedModel.add(linkTo(methodOn(OrderController.class).getAllBorrowOrders(expiry, orders.nextPageable().getPageNumber(),size)).withRel("next"));
+		}
+		if(orders.hasPrevious()){
+			pagedModel.add(linkTo(methodOn(OrderController.class).getAllBorrowOrders(expiry, orders.previousPageable().getPageNumber(),size)).withRel("previous"));
+		}
+		return new ResponseEntity<>(pagedModel,HttpStatus.OK);
 	}
 	
 	@GetMapping("/orders/{id}")
@@ -57,6 +77,10 @@ public class OrderController {
 		
 		try {
 			Order order = orderService.findOrder(id);
+			//a link to self
+			order.add(linkTo(methodOn(OrderController.class).getBorrowOrder(id)).withSelfRel());
+			// cancel
+			order.add(linkTo(methodOn(OrderController.class).returnBookOrder(id)).withRel("cancel"));
 			return new ResponseEntity<>(order, HttpStatus.OK);
 			
 		}catch(OrderNotFoundException e) {

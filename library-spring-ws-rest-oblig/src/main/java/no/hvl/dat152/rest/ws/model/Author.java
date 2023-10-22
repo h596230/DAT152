@@ -12,13 +12,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import org.springframework.hateoas.RepresentationModel;
 
 
 /**
  * @author tdoy
  */
 @Entity
-public class Author {
+public class Author extends RepresentationModel<Author> {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

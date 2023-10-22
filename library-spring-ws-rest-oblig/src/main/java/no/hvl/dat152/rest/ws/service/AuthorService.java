@@ -14,6 +14,7 @@ import no.hvl.dat152.rest.ws.model.Author;
 import no.hvl.dat152.rest.ws.model.Book;
 import no.hvl.dat152.rest.ws.repository.AuthorRepository;
 
+
 /**
  * @author tdoy
  */
@@ -22,8 +23,11 @@ public class AuthorService {
 
 	@Autowired
 	private AuthorRepository authorRepository;
-	
-	
+
+	public List<Author> findAll(){
+		return (List<Author>) authorRepository.findAll();
+	}
+
 	public Author saveAuthor(Author author) throws NullPointerException {
 		if(author != null) {
 			return authorRepository.save(author);
@@ -34,8 +38,21 @@ public class AuthorService {
 		authorRepository.deleteById(id);
 	}
 
-	public List<Author> getAuthors(){
-		return (List<Author>) authorRepository.findAll();
+	public int updateAuthor(long id, Author author) throws RuntimeException, AuthorNotFoundException {
+		Author existingAuthor = findById(id);
+		if(existingAuthor == null){
+			throw new RuntimeException("Error");
+		}
+		if(!existingAuthor.getFirstname().equals(author.getFirstname())){
+			existingAuthor.setFirstname(author.getFirstname());
+		}
+		if(!existingAuthor.getLastname().equals(author.getLastname())){
+			existingAuthor.setLastname(author.getLastname());
+		}
+		if(!existingAuthor.getBooks().equals(author.getBooks())){
+			existingAuthor.setBooks(author.getBooks());
+		}
+		return 1;
 	}
 	public Author findById(long id) throws AuthorNotFoundException {
 		

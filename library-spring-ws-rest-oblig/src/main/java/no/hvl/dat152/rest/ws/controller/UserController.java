@@ -106,6 +106,14 @@ public class UserController {
 		}
 		userService.createOrdersForUser(id,order);
 		Set<Order> orders = userService.findOrdersForUser(id);
+		for(Order o: orders){
+			//self
+			o.add(linkTo(methodOn(OrderController.class).getBorrowOrder(o.getId())).withSelfRel());
+			//cancel
+			o.add(linkTo(methodOn(OrderController.class).returnBookOrder(o.getId())).withRel("cancel"));
+			//update
+			o.add(linkTo(methodOn(OrderController.class).updateOrder(o.getId(),order)).withRel("update"));
+		}
 
 		return new ResponseEntity<>(orders, HttpStatus.CREATED);
 	}
